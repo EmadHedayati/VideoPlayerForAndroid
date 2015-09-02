@@ -1,0 +1,75 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+       android:layout_width="match_parent"
+       android:layout_height="wrap_content"
+       android:orientation="vertical"
+       android:id="@+id/EVideoViewLayout"
+    >
+
+    <RelativeLayout android:id="@+id/EVideoViewMediaLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#000">
+
+        <TextureView
+            android:id="@+id/EVideoViewTextureView"
+            android:layout_width="match_parent"
+            android:layout_height="250dp"/>
+
+        <LinearLayout
+            android:id="@+id/EVideoViewBottomLayout"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:orientation="horizontal"
+            android:layout_alignBottom="@+id/EVideoViewTextureView"
+            android:gravity="center_vertical"
+            android:paddingLeft="5dp"
+            android:paddingRight="5dp"
+            android:background="#33000000">
+
+            <ImageButton
+                android:id="@+id/EVideoViewPlayPauseButton"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:padding="10dp"
+                android:src="@drawable/play"
+                android:background="@null"
+                android:scaleType="centerInside"
+                android:visibility="visible"/>
+
+            <SeekBar
+                android:id="@+id/EVideoViewSeekBar"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                />
+
+            <TextView
+                android:id="@+id/EVideoViewDurationTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="00:00"
+                android:textColor="#fff"/>
+
+            <ImageButton
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:padding="10dp"
+                android:src="@drawable/page_info"
+                android:background="@null"
+                android:scaleType="centerInside"/>
+
+        </LinearLayout>
+
+    </RelativeLayout>
+
+    <LinearLayout
+        android:id="@+id/EVideoViewContentLayout"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:orientation="vertical"
+        android:visibility="gone"
+        android:background="#ff980000"
+        android:layout_below="@+id/EVideoViewTextureView">
+    </LinearLayout>
+
+</LinearLayout>
