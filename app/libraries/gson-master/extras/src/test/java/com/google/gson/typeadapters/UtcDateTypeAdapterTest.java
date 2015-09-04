@@ -44,7 +44,7 @@ public final class UtcDateTypeAdapterTest extends TestCase {
       Calendar cal = Calendar.getInstance(TimeZone.getTimeZone(timeZone));
       Date expected = cal.getTime();
       String json = gson.toJson(expected);
-      // System.out.println(json + ": " + timeZone);
+      // System.out.println(result + ": " + timeZone);
       Date actual = gson.fromJson(json, Date.class);
       assertEquals(expected.getTime(), actual.getTime());
     }

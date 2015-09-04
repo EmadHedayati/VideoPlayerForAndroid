@@ -111,7 +111,7 @@ public class JsonParserTest extends TestCase {
 
   public void testChangingCustomTreeAndDeserializing() {
     StringReader json =
-      new StringReader("{'stringValue':'no message','intValue':10,'longValue':20}");
+      new StringReader("{'stringValue':'no description','intValue':10,'longValue':20}");
     JsonObject obj = (JsonObject) new JsonParser().parse(json);
     obj.remove("stringValue");
     obj.addProperty("stringValue", "fooBar");

@@ -62,7 +62,7 @@ public class PerformanceTest extends TestCase {
       try {
         String stackTrace = sb.toString();
         sb.append(stackTrace);
-        String json = "{\"message\":\"Error message.\"," + "\"stackTrace\":\"" + stackTrace + "\"}";
+        String json = "{\"description\":\"Error description.\"," + "\"stackTrace\":\"" + stackTrace + "\"}";
         parseLongJson(json);
         System.out.println("Gson could handle a string of size: " + stackTrace.length());
       } catch (JsonParseException expected) {

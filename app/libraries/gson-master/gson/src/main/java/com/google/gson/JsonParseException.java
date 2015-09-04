@@ -33,19 +33,19 @@ public class JsonParseException extends RuntimeException {
   static final long serialVersionUID = -4086729973971783390L;
 
   /**
-   * Creates exception with the specified message. If you are wrapping another exception, consider
+   * Creates exception with the specified description. If you are wrapping another exception, consider
    * using {@link #JsonParseException(String, Throwable)} instead.
    *
-   * @param msg error message describing a possible cause of this exception.
+   * @param msg error description describing a possible cause of this exception.
    */
   public JsonParseException(String msg) {
     super(msg);
   }
 
   /**
-   * Creates exception with the specified message and cause.
+   * Creates exception with the specified description and cause.
    *
-   * @param msg error message describing what happened.
+   * @param msg error description describing what happened.
    * @param cause root exception that caused this exception to be thrown.
    */
   public JsonParseException(String msg, Throwable cause) {

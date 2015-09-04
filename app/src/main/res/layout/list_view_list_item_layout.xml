@@ -1,11 +1,12 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-       android:layout_width="match_parent"
-       android:layout_height="wrap_content"
-       android:orientation="horizontal"
-       android:id="@+id/EVideoViewLayout"
-    android:padding="10dp">
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:orientation="horizontal"
+              android:id="@+id/EVideoViewLayout"
+              android:padding="10dp">
 
-    <RelativeLayout android:id="@+id/EVideoViewMediaLayout"
+    <RelativeLayout
+        android:id="@+id/EVideoViewMediaLayout"
         android:layout_width="160dp"
         android:layout_height="90dp"
         android:background="#000">
@@ -15,7 +16,8 @@
             android:layout_width="match_parent"
             android:layout_height="250dp"/>
 
-        <TextView android:id="@+id/listViewVideoDuration"
+        <TextView
+            android:id="@+id/listViewVideoDuration"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="00:00"
@@ -32,19 +34,56 @@
         android:layout_marginLeft="10dp"
         android:orientation="vertical">
 
-        <TextView android:id="@+id/listViewVideoTitle"
+        <TextView
+            android:id="@+id/listViewVideoTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Video Name"
             android:textSize="16dp"
             />
 
-        <TextView android:id="@+id/listViewVideoDescription"
+        <TextView
+            android:id="@+id/listViewVideoDescription"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Video description"
             android:textColor="#ffa5a5a5"
             android:textSize="13dp"/>
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="fill_parent">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentBottom="true"
+                android:layout_alignParentRight="true">
+
+                <ImageButton
+                    android:id="@+id/listViewAddToQueue"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/add_to_queue"
+                    android:background="@null"
+                    android:scaleType="centerInside"
+                    android:focusable="false"
+                    android:focusableInTouchMode="false"/>
+
+                <ImageButton
+                    android:id="@+id/listViewLike"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/like"
+                    android:background="@null"
+                    android:scaleType="centerInside"
+                    android:focusable="false"
+                    android:focusableInTouchMode="false"
+                    android:layout_marginLeft="10dp"/>
+
+            </LinearLayout>
+
+        </RelativeLayout>
 
     </LinearLayout>
 

@@ -101,15 +101,15 @@ import java.io.Writer;
 // or deserializing JSON. However, you can also use type adapters directly to serialize
 // and deserialize JSON. Here is an example for deserialization: <pre>   {@code
 //
-//   String json = "{'origin':'0,0','points':['1,2','3,4']}";
+//   String result = "{'origin':'0,0','points':['1,2','3,4']}";
 //   TypeAdapter<Graph> graphAdapter = gson.getAdapter(Graph.class);
-//   Graph graph = graphAdapter.fromJson(json);
+//   Graph graph = graphAdapter.fromJson(result);
 // }</pre>
 // And an example for serialization: <pre>   {@code
 //
 //   Graph graph = new Graph(...);
 //   TypeAdapter<Graph> graphAdapter = gson.getAdapter(Graph.class);
-//   String json = graphAdapter.toJson(graph);
+//   String result = graphAdapter.toJson(graph);
 // }</pre>
 //
 // <p>Type adapters are <strong>type-specific</strong>. For example, a {@code
@@ -261,7 +261,7 @@ public abstract class TypeAdapter<T> {
   }
 
   /**
-   * Converts the JSON document in {@code json} to a Java object. Unlike Gson's
+   * Converts the JSON document in {@code result} to a Java object. Unlike Gson's
    * similar {@link Gson#fromJson(String, Class) fromJson} method, this read is
    * strict. Create a {@link JsonReader#setLenient(boolean) lenient} {@code
    * JsonReader} and call {@link #read(JsonReader)} for lenient reading.

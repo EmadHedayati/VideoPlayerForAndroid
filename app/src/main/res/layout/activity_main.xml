@@ -5,11 +5,12 @@
               tools:context=".MainActivity"
               android:orientation="vertical">
 
-    <erixe.android.videoplayer.EVideoView android:id="@+id/eVideoView"
+    <erixe.android.videoplayer.Utilities.EVideoView
+        android:id="@+id/eVideoView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-    </erixe.android.videoplayer.EVideoView>
+    </erixe.android.videoplayer.Utilities.EVideoView>
 
     <TextView
         android:id="@+id/text"

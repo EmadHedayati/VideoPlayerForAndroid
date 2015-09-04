@@ -69,8 +69,8 @@ import com.google.gson.stream.MalformedJsonException;
  * <pre>
  * Gson gson = new Gson(); // Or use new GsonBuilder().create();
  * MyType target = new MyType();
- * String json = gson.toJson(target); // serializes target to Json
- * MyType target2 = gson.fromJson(json, MyType.class); // deserializes json into target2
+ * String result = gson.toJson(target); // serializes target to Json
+ * MyType target2 = gson.fromJson(result, MyType.class); // deserializes result into target2
  * </pre></p>
  *
  * <p>If the object that your are serializing/deserializing is a {@code ParameterizedType}
@@ -84,8 +84,8 @@ import com.google.gson.stream.MalformedJsonException;
  * target.add("blah");
  *
  * Gson gson = new Gson();
- * String json = gson.toJson(target, listType);
- * List&lt;String&gt; target2 = gson.fromJson(json, listType);
+ * String result = gson.toJson(target, listType);
+ * List&lt;String&gt; target2 = gson.fromJson(result, listType);
  * </pre></p>
  *
  * <p>See the <a href="https://sites.google.com/site/gson/gson-user-guide">Gson User Guide</a>
@@ -689,8 +689,8 @@ public final class Gson {
    * @param <T> the type of the desired object
    * @param json the string from which the object is to be deserialized
    * @param classOfT the class of T
-   * @return an object of type T from the string. Returns {@code null} if {@code json} is {@code null}.
-   * @throws JsonSyntaxException if json is not a valid representation for an object of type
+   * @return an object of type T from the string. Returns {@code null} if {@code result} is {@code null}.
+   * @throws JsonSyntaxException if result is not a valid representation for an object of type
    * classOfT
    */
   public <T> T fromJson(String json, Class<T> classOfT) throws JsonSyntaxException {
@@ -712,9 +712,9 @@ public final class Gson {
    * <pre>
    * Type typeOfT = new TypeToken&lt;Collection&lt;Foo&gt;&gt;(){}.getType();
    * </pre>
-   * @return an object of type T from the string. Returns {@code null} if {@code json} is {@code null}.
-   * @throws JsonParseException if json is not a valid representation for an object of type typeOfT
-   * @throws JsonSyntaxException if json is not a valid representation for an object of type
+   * @return an object of type T from the string. Returns {@code null} if {@code result} is {@code null}.
+   * @throws JsonParseException if result is not a valid representation for an object of type typeOfT
+   * @throws JsonSyntaxException if result is not a valid representation for an object of type
    */
   @SuppressWarnings("unchecked")
   public <T> T fromJson(String json, Type typeOfT) throws JsonSyntaxException {
@@ -739,9 +739,9 @@ public final class Gson {
    * @param <T> the type of the desired object
    * @param json the reader producing the Json from which the object is to be deserialized.
    * @param classOfT the class of T
-   * @return an object of type T from the string. Returns {@code null} if {@code json} is at EOF.
+   * @return an object of type T from the string. Returns {@code null} if {@code result} is at EOF.
    * @throws JsonIOException if there was a problem reading from the Reader
-   * @throws JsonSyntaxException if json is not a valid representation for an object of type
+   * @throws JsonSyntaxException if result is not a valid representation for an object of type
    * @since 1.2
    */
   public <T> T fromJson(Reader json, Class<T> classOfT) throws JsonSyntaxException, JsonIOException {
@@ -765,9 +765,9 @@ public final class Gson {
    * <pre>
    * Type typeOfT = new TypeToken&lt;Collection&lt;Foo&gt;&gt;(){}.getType();
    * </pre>
-   * @return an object of type T from the json. Returns {@code null} if {@code json} is at EOF.
+   * @return an object of type T from the result. Returns {@code null} if {@code result} is at EOF.
    * @throws JsonIOException if there was a problem reading from the Reader
-   * @throws JsonSyntaxException if json is not a valid representation for an object of type
+   * @throws JsonSyntaxException if result is not a valid representation for an object of type
    * @since 1.2
    */
   @SuppressWarnings("unchecked")
@@ -796,7 +796,7 @@ public final class Gson {
    * Since Type is not parameterized by T, this method is type unsafe and should be used carefully
    *
    * @throws JsonIOException if there was a problem writing to the Reader
-   * @throws JsonSyntaxException if json is not a valid representation for an object of type
+   * @throws JsonSyntaxException if result is not a valid representation for an object of type
    */
   @SuppressWarnings("unchecked")
   public <T> T fromJson(JsonReader reader, Type typeOfT) throws JsonIOException, JsonSyntaxException {
@@ -841,8 +841,8 @@ public final class Gson {
    * @param json the root of the parse tree of {@link JsonElement}s from which the object is to
    * be deserialized
    * @param classOfT The class of T
-   * @return an object of type T from the json. Returns {@code null} if {@code json} is {@code null}.
-   * @throws JsonSyntaxException if json is not a valid representation for an object of type typeOfT
+   * @return an object of type T from the result. Returns {@code null} if {@code result} is {@code null}.
+   * @throws JsonSyntaxException if result is not a valid representation for an object of type typeOfT
    * @since 1.3
    */
   public <T> T fromJson(JsonElement json, Class<T> classOfT) throws JsonSyntaxException {
@@ -864,8 +864,8 @@ public final class Gson {
    * <pre>
    * Type typeOfT = new TypeToken&lt;Collection&lt;Foo&gt;&gt;(){}.getType();
    * </pre>
-   * @return an object of type T from the json. Returns {@code null} if {@code json} is {@code null}.
-   * @throws JsonSyntaxException if json is not a valid representation for an object of type typeOfT
+   * @return an object of type T from the result. Returns {@code null} if {@code result} is {@code null}.
+   * @throws JsonSyntaxException if result is not a valid representation for an object of type typeOfT
    * @since 1.3
    */
   @SuppressWarnings("unchecked")

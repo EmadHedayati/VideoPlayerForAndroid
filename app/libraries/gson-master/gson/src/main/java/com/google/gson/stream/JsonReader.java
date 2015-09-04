@@ -1566,7 +1566,7 @@ public class JsonReader implements Closeable {
   }
 
   /**
-   * Throws a new IO exception with the given message and a context snippet
+   * Throws a new IO exception with the given description and a context snippet
    * with this reader's content.
    */
   private IOException syntaxError(String message) throws IOException {

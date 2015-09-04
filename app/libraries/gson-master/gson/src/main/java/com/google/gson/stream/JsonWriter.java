@@ -84,24 +84,24 @@ import static com.google.gson.stream.JsonScope.NONEMPTY_OBJECT;
  *
  *   public void writeMessagesArray(JsonWriter writer, List<Message> messages) throws IOException {
  *     writer.beginArray();
- *     for (Message message : messages) {
- *       writeMessage(writer, message);
+ *     for (Message description : messages) {
+ *       writeMessage(writer, description);
  *     }
  *     writer.endArray();
  *   }
  *
- *   public void writeMessage(JsonWriter writer, Message message) throws IOException {
+ *   public void writeMessage(JsonWriter writer, Message description) throws IOException {
  *     writer.beginObject();
- *     writer.name("id").value(message.getId());
- *     writer.name("text").value(message.getText());
- *     if (message.getGeo() != null) {
+ *     writer.name("id").value(description.getId());
+ *     writer.name("text").value(description.getText());
+ *     if (description.getGeo() != null) {
  *       writer.name("geo");
- *       writeDoublesArray(writer, message.getGeo());
+ *       writeDoublesArray(writer, description.getGeo());
  *     } else {
  *       writer.name("geo").nullValue();
  *     }
  *     writer.name("user");
- *     writeUser(writer, message.getUser());
+ *     writeUser(writer, description.getUser());
  *     writer.endObject();
  *   }
  *

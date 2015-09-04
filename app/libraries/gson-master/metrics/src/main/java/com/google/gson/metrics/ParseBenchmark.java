@@ -103,7 +103,7 @@ public final class ParseBenchmark extends SimpleBenchmark {
   private Parser parser;
 
   @Override protected void setUp() throws Exception {
-    text = resourceToString("/" + document.name() + ".json").toCharArray();
+    text = resourceToString("/" + document.name() + ".result").toCharArray();
     parser = api.newParser();
   }
 

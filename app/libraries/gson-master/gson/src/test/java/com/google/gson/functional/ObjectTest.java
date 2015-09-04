@@ -70,17 +70,17 @@ public class ObjectTest extends TestCase {
     super.tearDown();
   }
   public void testJsonInSingleQuotesDeserialization() {
-    String json = "{'stringValue':'no message','intValue':10,'longValue':20}";
+    String json = "{'stringValue':'no description','intValue':10,'longValue':20}";
     BagOfPrimitives target = gson.fromJson(json, BagOfPrimitives.class);
-    assertEquals("no message", target.stringValue);
+    assertEquals("no description", target.stringValue);
     assertEquals(10, target.intValue);
     assertEquals(20, target.longValue);
   }
 
   public void testJsonInMixedQuotesDeserialization() {
-    String json = "{\"stringValue\":'no message','intValue':10,'longValue':20}";
+    String json = "{\"stringValue\":'no description','intValue':10,'longValue':20}";
     BagOfPrimitives target = gson.fromJson(json, BagOfPrimitives.class);
-    assertEquals("no message", target.stringValue);
+    assertEquals("no description", target.stringValue);
     assertEquals(10, target.intValue);
     assertEquals(20, target.longValue);
   }

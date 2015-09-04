@@ -253,7 +253,7 @@ public class TypeToken<T> {
   private static AssertionError buildUnexpectedTypeError(
       Type token, Class<?>... expected) {
 
-    // Build exception message
+    // Build exception description
     StringBuilder exceptionMessage =
         new StringBuilder("Unexpected type. Expected one of: ");
     for (Class<?> clazz : expected) {

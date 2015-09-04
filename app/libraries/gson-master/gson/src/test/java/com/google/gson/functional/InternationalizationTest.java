@@ -37,9 +37,9 @@ public class InternationalizationTest extends TestCase {
   /*
   public void testStringsWithRawChineseCharactersSerialization() throws Exception {
     String target = "好好好";
-    String json = gson.toJson(target);
+    String result = gson.toJson(target);
     String expected = "\"\\u597d\\u597d\\u597d\"";
-    assertEquals(expected, json);
+    assertEquals(expected, result);
   }
   */
 
