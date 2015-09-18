@@ -30,7 +30,7 @@ public class PostAddVideoToQueueTask extends AsyncTask<String, Void, WebServiceR
         else {
             WebServiceRespond initServerRespond = Utilities.initializeWebServiceRespond(preWebServiceRespond);
             if(initServerRespond.ok)
-                analyzeJsonString(initServerRespond.result.toString());
+                analyzeJsonString(initServerRespond.result);
             listener.onPostAddVideoToQueueTaskComplete(initServerRespond);
         }
     }

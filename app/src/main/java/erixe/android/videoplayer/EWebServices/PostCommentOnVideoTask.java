@@ -1,7 +1,13 @@
 package erixe.android.videoplayer.EWebServices;
 
 import android.os.AsyncTask;
+
+import com.google.gson.Gson;
+
 import java.util.Map;
+
+import erixe.android.videoplayer.EVideoInformationModels.EVideoInformation;
+import erixe.android.videoplayer.EVideoInformationModels.EVideoInformationComment;
 
 public class PostCommentOnVideoTask extends AsyncTask<String, Void, WebServiceRespond> {
 
@@ -26,21 +32,23 @@ public class PostCommentOnVideoTask extends AsyncTask<String, Void, WebServiceRe
     @Override
     protected void onPostExecute(WebServiceRespond preWebServiceRespond) {
         if(!preWebServiceRespond.ok)
-            listener.onPostCommentOnVideoTaskComplete(preWebServiceRespond);
+            listener.onPostCommentOnVideoTaskComplete(preWebServiceRespond, null);
         else {
             WebServiceRespond initServerRespond = Utilities.initializeWebServiceRespond(preWebServiceRespond);
             if(initServerRespond.ok)
-                analyzeJsonString(initServerRespond.result.toString());
-            listener.onPostCommentOnVideoTaskComplete(initServerRespond);
+                listener.onPostCommentOnVideoTaskComplete(initServerRespond, analyzeJsonString(initServerRespond.result));
+            else
+                listener.onPostCommentOnVideoTaskComplete(initServerRespond, null);
         }
     }
 
-    private String analyzeJsonString(String json)
+    private EVideoInformationComment analyzeJsonString(String json)
     {
-        return null;
+        EVideoInformationComment newEVideoInformationComment = new Gson().fromJson(json, EVideoInformationComment.class);
+        return newEVideoInformationComment;
     }
 
     public interface OnTaskCompleteListener {
-        public void onPostCommentOnVideoTaskComplete(WebServiceRespond webServiceRespond);
+        public void onPostCommentOnVideoTaskComplete(WebServiceRespond webServiceRespond, EVideoInformationComment eVideoInformationComment);
     }
 }

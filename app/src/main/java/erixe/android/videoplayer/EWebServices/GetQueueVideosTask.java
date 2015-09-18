@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import erixe.android.videoplayer.EVideoInformationModels.EQueueInformation;
 import erixe.android.videoplayer.EVideoInformationModels.EVideoInformation;
 
 public class GetQueueVideosTask extends AsyncTask<String, Void, WebServiceRespond> {
@@ -38,22 +39,22 @@ public class GetQueueVideosTask extends AsyncTask<String, Void, WebServiceRespon
         else {
             WebServiceRespond initServerRespond = Utilities.initializeWebServiceRespond(preWebServiceRespond);
             if(initServerRespond.ok)
-                listener.onGetQueueVideosTaskComplete(initServerRespond, analyzeJsonString(initServerRespond.result.toString()));
+                listener.onGetQueueVideosTaskComplete(initServerRespond, analyzeJsonString(initServerRespond.result));
             else
                 listener.onGetQueueVideosTaskComplete(initServerRespond, null);
         }
     }
 
-    private List<EVideoInformation> analyzeJsonString(String json)
+    private List<EQueueInformation> analyzeJsonString(String json)
     {
-        List<EVideoInformation> queueVideosInformation = new ArrayList<>();
+        List<EQueueInformation> queueVideosInformation = new ArrayList<>();
         try {
             JSONArray jsonArray = new JSONArray(json);
             for(int i = 0; i < jsonArray.length(); i++) {
                 JSONObject videoInformation = jsonArray.getJSONObject(i);
-                EVideoInformation newEVideoInformation = new Gson().fromJson(videoInformation.toString(), EVideoInformation.class);
-                newEVideoInformation.type = EVideoInformation.EVIDEO_INFORMATION_QUEUE_TYPE;
-                queueVideosInformation.add(newEVideoInformation);
+                EQueueInformation newEQueueInformation = new Gson().fromJson(videoInformation.toString(), EQueueInformation.class);
+                newEQueueInformation.video.type = EVideoInformation.EVIDEO_INFORMATION_QUEUE_TYPE;
+                queueVideosInformation.add(newEQueueInformation);
             }
         } catch (JSONException e) {
             e.printStackTrace();
@@ -62,6 +63,6 @@ public class GetQueueVideosTask extends AsyncTask<String, Void, WebServiceRespon
     }
 
     public interface OnTaskCompleteListener {
-        public void onGetQueueVideosTaskComplete(WebServiceRespond webServiceRespond, List<EVideoInformation> queueVideosInformation);
+        public void onGetQueueVideosTaskComplete(WebServiceRespond webServiceRespond, List<EQueueInformation> queueVideosInformation);
     }
 }

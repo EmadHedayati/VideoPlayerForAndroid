@@ -38,7 +38,7 @@ public class GetIndexVideosTask extends AsyncTask<String, Void, WebServiceRespon
         else {
             WebServiceRespond initServerRespond = Utilities.initializeWebServiceRespond(preWebServiceRespond);
             if(initServerRespond.ok)
-                listener.onGetIndexVideosTaskComplete(initServerRespond, analyzeJsonString(initServerRespond.result.toString()));
+                listener.onGetIndexVideosTaskComplete(initServerRespond, analyzeJsonString(initServerRespond.result));
             else
                 listener.onGetIndexVideosTaskComplete(initServerRespond, null);
         }

@@ -36,7 +36,7 @@ public class GetShowVideoTask extends AsyncTask<String, Void, WebServiceRespond>
         else {
             WebServiceRespond initServerRespond = Utilities.initializeWebServiceRespond(preWebServiceRespond);
             if(initServerRespond.ok)
-                listener.onGetShowVideoTaskComplete(initServerRespond, analyzeJsonString(initServerRespond.result.toString()));
+                listener.onGetShowVideoTaskComplete(initServerRespond, analyzeJsonString(initServerRespond.result));
             else
                 listener.onGetShowVideoTaskComplete(initServerRespond, null);
         }
@@ -45,13 +45,8 @@ public class GetShowVideoTask extends AsyncTask<String, Void, WebServiceRespond>
     private EVideoInformation analyzeJsonString(String json)
     {
         EVideoInformation newEVideoInformation = null;
-        try {
-            JSONObject videoInformation = new JSONObject(json).getJSONObject("video");
-            newEVideoInformation = new Gson().fromJson(videoInformation.toString(), EVideoInformation.class);
-            newEVideoInformation.type = EVideoInformation.EVIDEO_INFORMATION_SHOW_TYPE;
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+        newEVideoInformation = new Gson().fromJson(json, EVideoInformation.class);
+        newEVideoInformation.type = EVideoInformation.EVIDEO_INFORMATION_SHOW_TYPE;
         return newEVideoInformation;
     }
 

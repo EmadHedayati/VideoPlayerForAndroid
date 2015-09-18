@@ -1,6 +1,10 @@
 package erixe.android.videoplayer.EWebServices;
 
 import android.os.AsyncTask;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.Map;
 
 public class PostLikeOnVideoTask extends AsyncTask<String, Void, WebServiceRespond> {
@@ -26,21 +30,29 @@ public class PostLikeOnVideoTask extends AsyncTask<String, Void, WebServiceRespo
     @Override
     protected void onPostExecute(WebServiceRespond preWebServiceRespond) {
         if(!preWebServiceRespond.ok)
-            listener.onPostLikeOnVideoTaskComplete(preWebServiceRespond);
+            listener.onPostLikeOnVideoTaskComplete(preWebServiceRespond, null);
         else {
             WebServiceRespond initServerRespond = Utilities.initializeWebServiceRespond(preWebServiceRespond);
             if(initServerRespond.ok)
-                analyzeJsonString(initServerRespond.result.toString());
-            listener.onPostLikeOnVideoTaskComplete(initServerRespond);
+                listener.onPostLikeOnVideoTaskComplete(initServerRespond, analyzeJsonString(initServerRespond.result));
+            else
+                listener.onPostLikeOnVideoTaskComplete(initServerRespond, null);
         }
     }
 
     private String analyzeJsonString(String json)
     {
+        try {
+            String likes = new JSONObject(json).getString("likes");
+            return likes;
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
         return null;
     }
 
     public interface OnTaskCompleteListener {
-        public void onPostLikeOnVideoTaskComplete(WebServiceRespond webServiceResult);
+        public void onPostLikeOnVideoTaskComplete(WebServiceRespond webServiceRespond, String likes);
     }
 }
