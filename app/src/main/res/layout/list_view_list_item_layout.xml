@@ -3,7 +3,87 @@
               android:layout_height="wrap_content"
               android:orientation="horizontal"
               android:id="@+id/EVideoViewLayout"
-              android:padding="10dp">
+              android:padding="10dp"
+              android:descendantFocusability="blocksDescendants">
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="90dp"
+        android:layout_weight="1"
+        android:layout_marginRight="5dp"
+        android:orientation="vertical"
+        android:gravity="right">
+
+        <TextView
+            android:id="@+id/listViewVideoTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Video Name"
+            android:gravity="right"
+            android:maxLines="2"
+            android:textSize="16dp"
+            android:textColor="#ff424242"
+            />
+
+        <TextView
+            android:id="@+id/listViewVideoViews"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textColor="#ffa5a5a5"
+            android:textSize="@dimen/text_size_small"/>
+
+        <TextView
+            android:id="@+id/listViewVideoDescription"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Video description"
+            android:textColor="#ffa5a5a5"
+            android:textSize="13dp"
+            android:visibility="gone"/>
+
+        <RelativeLayout
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:minHeight="30dp">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_alignParentBottom="true"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/listViewVideoLikes"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0"
+                    android:textColor="#ffa5a5a5"
+                    android:textSize="@dimen/text_size_small"/>
+
+                <ImageButton
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:padding="5dp"
+                    android:background="@null"
+                    android:src="@drawable/like"
+                    android:scaleType="centerInside"/>
+
+                <ImageButton
+                    android:layout_width="33dp"
+                    android:layout_height="33dp"
+                    android:padding="5dp"
+                    android:background="@null"
+                    android:src="@drawable/views"
+                    android:scaleType="centerInside"
+                    android:visibility="gone"/>
+
+            </LinearLayout>
+
+        </RelativeLayout>
+
+    </LinearLayout>
 
     <RelativeLayout
         android:id="@+id/EVideoViewMediaLayout"
@@ -14,7 +94,7 @@
         <ImageView
             android:id="@+id/listViewVideoCover"
             android:layout_width="match_parent"
-            android:layout_height="250dp"/>
+            android:layout_height="90dp"/>
 
         <TextView
             android:id="@+id/listViewVideoDuration"
@@ -24,67 +104,8 @@
             android:textColor="#fff"
             android:padding="3dp"
             android:layout_alignParentBottom="true"
-            android:layout_alignParentRight="true"/>
+            android:layout_alignParentLeft="true"/>
 
     </RelativeLayout>
-
-    <LinearLayout
-        android:layout_width="fill_parent"
-        android:layout_height="match_parent"
-        android:layout_marginLeft="10dp"
-        android:orientation="vertical">
-
-        <TextView
-            android:id="@+id/listViewVideoTitle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Video Name"
-            android:textSize="16dp"
-            />
-
-        <TextView
-            android:id="@+id/listViewVideoDescription"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Video description"
-            android:textColor="#ffa5a5a5"
-            android:textSize="13dp"/>
-
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="fill_parent">
-
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentBottom="true"
-                android:layout_alignParentRight="true">
-
-                <ImageButton
-                    android:id="@+id/listViewAddToQueue"
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:src="@drawable/add_to_queue"
-                    android:background="@null"
-                    android:scaleType="centerInside"
-                    android:focusable="false"
-                    android:focusableInTouchMode="false"/>
-
-                <ImageButton
-                    android:id="@+id/listViewLike"
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:src="@drawable/like"
-                    android:background="@null"
-                    android:scaleType="centerInside"
-                    android:focusable="false"
-                    android:focusableInTouchMode="false"
-                    android:layout_marginLeft="10dp"/>
-
-            </LinearLayout>
-
-        </RelativeLayout>
-
-    </LinearLayout>
 
 </LinearLayout>
