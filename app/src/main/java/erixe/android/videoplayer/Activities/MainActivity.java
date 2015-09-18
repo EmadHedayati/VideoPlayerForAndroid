@@ -1,85 +1,219 @@
 package erixe.android.videoplayer.Activities;
 
 import android.app.Activity;
-import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.os.AsyncTask;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.res.Configuration;
+import android.graphics.Point;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.LayoutInflater;
+import android.os.Handler;
+import android.view.Display;
+import android.view.KeyEvent;
 import android.view.View;
-import android.view.ViewGroup;
+import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import erixe.android.videoplayer.Adapters.CommentListItemAdapter;
+import erixe.android.videoplayer.Adapters.SimpleVideoListItemAdapter;
+import erixe.android.videoplayer.EVideoInformationModels.EQueueInformation;
 import erixe.android.videoplayer.EVideoInformationModels.EVideoInformation;
-import erixe.android.videoplayer.EWebServices.EWebServiceStrings;
-import erixe.android.videoplayer.EWebServices.GetIndexVideosTask;
-import erixe.android.videoplayer.EWebServices.GetQueueVideosTask;
-import erixe.android.videoplayer.EWebServices.GetShowVideoTask;
-import erixe.android.videoplayer.EWebServices.PostAddVideoToQueueTask;
-import erixe.android.videoplayer.EWebServices.PostCommentOnVideoTask;
-import erixe.android.videoplayer.EWebServices.PostLikeOnVideoTask;
-import erixe.android.videoplayer.EWebServices.WebServiceRespond;
+import erixe.android.videoplayer.EVideoInformationModels.EVideoInformationComment;
+import erixe.android.videoplayer.EWebServices.*;
 import erixe.android.videoplayer.Utilities.EVideoView;
 import erixe.android.videoplayer.R;
 
 public class MainActivity extends Activity implements GetShowVideoTask.OnTaskCompleteListener, GetIndexVideosTask.OnTaskCompleteListener,
         GetQueueVideosTask.OnTaskCompleteListener, PostAddVideoToQueueTask.OnTaskCompleteListener,
-        PostLikeOnVideoTask.OnTaskCompleteListener, PostCommentOnVideoTask.OnTaskCompleteListener {
+        PostRemoveVideoFromQueueTask.OnTaskCompleteListener, PostUnlikeOnVideoTask.OnTaskCompleteListener,
+        PostLikeOnVideoTask.OnTaskCompleteListener, PostCommentOnVideoTask.OnTaskCompleteListener,
+        GetSearchVideosTask.OnTaskCompleteListener{
 
+    public static final int LAYOUT_STATE_CONTENT_PAGE = 1;
+    public static final int LAYOUT_STATE_HOME_PAGE = 2;
+
+    SharedPreferences prefs;
+
+    ActionBarViewHolder abvh = new ActionBarViewHolder();
+    HomePageViewHolder hpvh = new HomePageViewHolder();
+    ContentPageViewHolder cpvh = new ContentPageViewHolder();
+
+    SimpleVideoListItemAdapter homePageListViewAdapter;
+    CommentListItemAdapter commentListItemAdapter;
     List<EVideoInformation> indexVideosInformation = new ArrayList<>();
-    List<EVideoInformation> queueVideosInformation = new ArrayList<>();
+    List<EQueueInformation> queueVideosInformation = new ArrayList<>();
     EVideoInformation showVideoInformation;
-    EVideoView eVideoView;
-    ListView listView;
+
+    int layoutState = LAYOUT_STATE_HOME_PAGE, screenHeight, screenWidth, marginTopForLayout;
+    String username, password;
+
+    @Override
+    public void onBackPressed() {
+        if(layoutState == LAYOUT_STATE_CONTENT_PAGE) {
+            cpvh.contentPageEVideoView.pauseMedia();
+            changeLayoutStateTo(LAYOUT_STATE_HOME_PAGE);
+        }
+        else
+            super.onBackPressed();
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            marginTopForLayout = screenWidth;
+        } else if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT){
+            marginTopForLayout = screenHeight;
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        eVideoView = (EVideoView) findViewById(R.id.eVideoView);
-        listView = (ListView) findViewById(R.id.listView);
+        if(savedInstanceState != null) {
+            layoutState = savedInstanceState.getInt("layoutState");
+            if (layoutState == 0)
+                layoutState = LAYOUT_STATE_HOME_PAGE;
+        }
 
-//        new GetIndexVideosTask(MainActivity.this, null).execute("hedayati.emad@gmail.com", "36233623");
-        new PostAddVideoToQueueTask(MainActivity.this, null).execute("hedayati.emad@gmail.com", "36233623", "1");
+        setViewHolders();
+        changeLayoutStateTo(layoutState);
+        getAuthentication();
+
+        new GetIndexVideosTask(MainActivity.this, null).execute(username, password);
+    }
+
+    public void getAuthentication()
+    {
+        prefs = getApplicationContext().getSharedPreferences("MyPref", 0);
+
+        username = getIntent().getStringExtra("username");
+        password = getIntent().getStringExtra("password");
+        if(username != null && password != null)
+        {
+            prefs.edit().putString("username", username).apply();
+            prefs.edit().putString("password", password).apply();
+        }
+
+        username = prefs.getString("username", null);
+        password = prefs.getString("password", null);
+        if(username == null && password == null)
+        {
+            username = "hedayati.emad@gmail.com";
+            password = "36233623";
+            abvh.actionBarAuthenticationPanel.setVisibility(View.VISIBLE);
+            abvh.actionBarUserPanel.setVisibility(View.GONE);
+        }
+        else
+        {
+            abvh.actionBarAuthenticationPanel.setVisibility(View.GONE);
+            abvh.actionBarUserPanel.setVisibility(View.VISIBLE);
+        }
+    }
+
+    public void toast(String message)
+    {
+        if(message == null || message.equals(""))
+            message = "null";
+        Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
     }
 
     private void populateListView()
     {
-        ListViewAdapter listViewAdapter = new ListViewAdapter(getApplicationContext(), indexVideosInformation);
-        listView.setAdapter(listViewAdapter);
+        homePageListViewAdapter = new SimpleVideoListItemAdapter(getApplicationContext(), indexVideosInformation);
+        hpvh.homePageVideoList.setAdapter(homePageListViewAdapter);
 
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        hpvh.homePageVideoList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                new GetShowVideoTask(MainActivity.this, null).execute("hedayati.emad@gmail.com", "36233623", indexVideosInformation.get(i).id);
+                changeLayoutStateTo(LAYOUT_STATE_CONTENT_PAGE);
+                cpvh.contentPageEVideoView.resetMedia();
+                fillContentPage(null);
+                indexVideosInformation.get(i).views = String.valueOf(Integer.parseInt(indexVideosInformation.get(i).views) + 1);
+                homePageListViewAdapter.notifyDataSetChanged();
+                new GetShowVideoTask(MainActivity.this, null).execute(username, password, indexVideosInformation.get(i).id);
             }
         });
+    }
+
+    public void changeLayoutStateTo(int layoutState)
+    {
+        switch (layoutState){
+            case LAYOUT_STATE_HOME_PAGE:
+                abvh.actionBarTitle.setText("Home");
+                abvh.actionBar.setVisibility(View.VISIBLE);
+//                hpvh.homePage.setVisibility(View.VISIBLE);
+//                vh.contentPage.setVisibility(View.INVISIBLE);
+                RelativeLayout.LayoutParams lp1 = (RelativeLayout.LayoutParams) hpvh.homePage.getLayoutParams();
+                lp1.setMargins(0, 0, 0, 0);
+                hpvh.homePage.setLayoutParams(lp1);
+                LinearLayout.LayoutParams lp2 = (LinearLayout.LayoutParams) cpvh.contentPageEVideoView.getLayoutParams();
+                lp2.setMargins(0, marginTopForLayout, 0, 0);
+                cpvh.contentPageEVideoView.setLayoutParams(lp2);
+                break;
+            case LAYOUT_STATE_CONTENT_PAGE:
+                abvh.actionBarTitle.setText("Video");
+                abvh.actionBar.setVisibility(View.GONE);
+//                hpvh.homePage.setVisibility(View.INVISIBLE);
+//                vh.contentPage.setVisibility(View.VISIBLE);
+                RelativeLayout.LayoutParams lp3 = (RelativeLayout.LayoutParams) hpvh.homePage.getLayoutParams();
+                lp3.setMargins(0, marginTopForLayout, 0, 0);
+                hpvh.homePage.setLayoutParams(lp3);
+                LinearLayout.LayoutParams lp4 = (LinearLayout.LayoutParams) cpvh.contentPageEVideoView.getLayoutParams();
+                lp4.setMargins(0, 0, 0, 0);
+                cpvh.contentPageEVideoView.setLayoutParams(lp4);
+                break;
+        }
+
+        this.layoutState = layoutState;
+    }
+
+    @Override
+    public void onGetSearchVideosTaskComplete(WebServiceRespond webServiceRespond, List<EVideoInformation> indexVideosInformation) {
+        if(webServiceRespond.ok) {
+            this.indexVideosInformation = indexVideosInformation;
+            populateListView();
+        }
     }
 
     @Override
     public void onGetShowVideoTaskComplete(WebServiceRespond webServiceRespond, EVideoInformation showVideoInformation) {
         if(webServiceRespond.ok) {
             this.showVideoInformation = showVideoInformation;
+            cpvh.contentPageEVideoView.setVideoQualities(showVideoInformation.qualities);
+            fillContentPage(showVideoInformation);
             try {
-                eVideoView.pauseMedia();
-                eVideoView.setMediaPath(EWebServiceStrings.SERVER_BASE_URL + showVideoInformation.qualities.get(0).file);
-                eVideoView.prepareMedia(true);
+                if(showVideoInformation.qualities.size() > 0)
+                    cpvh.contentPageEVideoView.setMediaPath(EWebServiceStrings.SERVER_BASE_URL +
+                                    showVideoInformation.qualities.get(0).file);
+                cpvh.contentPageEVideoView.prepareMedia(true);
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        }
+        else {
+            toast(webServiceRespond.description);
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    onBackPressed();
+                }
+            }, 2000);
         }
     }
 
@@ -92,415 +226,316 @@ public class MainActivity extends Activity implements GetShowVideoTask.OnTaskCom
     }
 
     @Override
-    public void onGetQueueVideosTaskComplete(WebServiceRespond webServiceRespond, List<EVideoInformation> queueVideosInformation) {
+    public void onGetQueueVideosTaskComplete(WebServiceRespond webServiceRespond, List<EQueueInformation> queueVideosInformation) {
         if(webServiceRespond.ok) {
             this.queueVideosInformation = queueVideosInformation;
+            List<EVideoInformation> tmp = new ArrayList<>();
+            for(EQueueInformation eQueueInformation : queueVideosInformation)
+                tmp.add(eQueueInformation.video);
+
+//            populateListView();
         }
     }
 
     @Override
-    public void onPostCommentOnVideoTaskComplete(WebServiceRespond webServiceRespond) {
-
+    public void onPostCommentOnVideoTaskComplete(WebServiceRespond webServiceRespond, EVideoInformationComment eVideoInformationComment) {
+        if(webServiceRespond.ok)
+        {
+            showVideoInformation.comments.add(eVideoInformationComment);
+//            CommentListItemAdapter commentListItemAdapter = new CommentListItemAdapter(getApplicationContext(), showVideoInformation.comments);
+//            cpvh.contentPageVideoList.setAdapter(commentListItemAdapter);
+            commentListItemAdapter.notifyDataSetChanged();
+        }
     }
 
     @Override
     public void onPostAddVideoToQueueTaskComplete(WebServiceRespond webServiceRespond) {
-
+        if(webServiceRespond.ok) {
+            showVideoInformation.queued = "true";
+            cpvh.contentPageVideoAddToQueue.setImageResource(R.drawable.remove_from_queue);
+            toast("Video added to queue");
+        }
+        else
+            toast(webServiceRespond.description);
     }
 
     @Override
-    public void onPostLikeOnVideoTaskComplete(WebServiceRespond webServiceResult) {
-
+    public void onPostRemoveVideoFromQueueTaskComplete(WebServiceRespond webServiceRespond) {
+        if(webServiceRespond.ok) {
+            showVideoInformation.queued = "false";
+            cpvh.contentPageVideoAddToQueue.setImageResource(R.drawable.add_to_queue);
+            toast("Video removed from queue");
+        }
+        else
+            toast(webServiceRespond.description);
     }
 
-    private class ListViewAdapter extends ArrayAdapter<EVideoInformation> {
-
-        Context context;
-        List<EVideoInformation> eVideoInformations;
-        ViewHolder vh;
-
-        public ListViewAdapter(Context context, List<EVideoInformation> eVideoInformations) {
-            super(context, R.layout.list_view_list_item_layout, eVideoInformations);
-            this.context = context;
-            this.eVideoInformations = eVideoInformations;
-        }
-
-        public View getView(int position, View convertView, ViewGroup parent) {
-            ViewHolder vh;
-
-            if (convertView == null) {
-                LayoutInflater vi = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-                convertView = vi.inflate(R.layout.list_view_list_item_layout, null);
-
-                vh = new ViewHolder();
-                vh.listViewVideoCover = (ImageView) convertView.findViewById(R.id.listViewVideoCover);
-                vh.listViewVideoDuration = (TextView) convertView.findViewById(R.id.listViewVideoDuration);
-                vh.listViewVideoTitle = (TextView) convertView.findViewById(R.id.listViewVideoTitle);
-                vh.listViewVideoDescription = (TextView) convertView.findViewById(R.id.listViewVideoDescription);
-                vh.listViewAddToQueue = (ImageButton) convertView.findViewById(R.id.listViewAddToQueue);
-                vh.listViewLike = (ImageButton) convertView.findViewById(R.id.listViewLike);
-
-                convertView.setTag(vh);
-            }
-            else {
-                vh = (ViewHolder) convertView.getTag();
-            }
-
-            EVideoInformation currentEVideoInformation = eVideoInformations.get(position);
-            vh = (ViewHolder) convertView.getTag();
-            new DownloadImageTask(vh.listViewVideoCover).execute(EWebServiceStrings.SERVER_BASE_URL + currentEVideoInformation.cover.file);
-            vh.listViewVideoDuration.setText(currentEVideoInformation.duration);
-            vh.listViewVideoTitle.setText(currentEVideoInformation.title);
-            vh.listViewVideoDescription.setText(currentEVideoInformation.description);
-
-            vh.listViewLike.setTag(currentEVideoInformation);
-            vh.listViewLike.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    EVideoInformation currentEVideoInformation = (EVideoInformation)view.getTag();
-                    new PostLikeOnVideoTask(MainActivity.this, null).execute("hedayati.emad@gmail.com", "36233623", currentEVideoInformation.id);
-                }
-            });
-
-            vh.listViewAddToQueue.setTag(currentEVideoInformation);
-            vh.listViewAddToQueue.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    EVideoInformation currentEVideoInformation = (EVideoInformation)view.getTag();
-                    new PostAddVideoToQueueTask(MainActivity.this, null).execute("hedayati.emad@gmail.com", "36233623", currentEVideoInformation.id);
-                }
-            });
-
-            return convertView;
-        }
-
-        public class ViewHolder
+    @Override
+    public void onPostLikeOnVideoTaskComplete(WebServiceRespond webServiceRespond, String likes) {
+        if(webServiceRespond.ok)
         {
-            ImageView listViewVideoCover;
-            TextView listViewVideoDuration;
-            TextView listViewVideoTitle;
-            TextView listViewVideoDescription;
-            ImageButton listViewAddToQueue;
-            ImageButton listViewLike;
-        }
+            showVideoInformation.liked = "true";
+            cpvh.contentPageVideoLike.setImageResource(R.drawable.liked);
+            cpvh.contentPageVideoLikesNumber.setText(likes);
 
-        private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
-            ImageView bmImage;
-
-            public DownloadImageTask(ImageView bmImage) {
-                this.bmImage = bmImage;
-            }
-
-            protected Bitmap doInBackground(String... urls) {
-                String urlDisplay = urls[0];
-                Bitmap mIcon11 = null;
-                try {
-                    InputStream in = new java.net.URL(urlDisplay).openStream();
-                    mIcon11 = BitmapFactory.decodeStream(in);
-                } catch (Exception e) {
-                    Log.e("Error", e.getMessage());
-                    e.printStackTrace();
+            for(EVideoInformation videoInformation : indexVideosInformation)
+                if(videoInformation.id == showVideoInformation.id)
+                {
+                    videoInformation.likes = String.valueOf(Integer.parseInt(videoInformation.likes) + 1);
+                    homePageListViewAdapter.notifyDataSetChanged();
                 }
-                return mIcon11;
-            }
-
-            protected void onPostExecute(Bitmap result) {
-                bmImage.setImageBitmap(result);
-            }
         }
-
+        else
+            toast(webServiceRespond.description);
     }
 
-//    private class GetShowVideoTask extends AsyncTask<String, Void, String> {
-//
-//        private OnGetShowVideoTaskListener listener;
-//        public GetShowVideoTask(OnGetShowVideoTaskListener listener)
-//        {
-//            this.listener = listener;
-//        }
-//
-//        @Override
-//        protected String doInBackground(String... paramsValue) {
-//            String result = "";
-//            try {
-//                InputStream inputStream = Utilities.getWebServiceInputStream(paramsValue[0], paramsValue[1], GET_VIDEO + paramsValue[2]);
-//                if (inputStream != null)
-//                    result = Utilities.convertInputStreamToString(inputStream);
-//                else
-//                    result = "FailedToConnect";
-//            } catch (Exception e) {
-//                Log.d("InputStream", e.getLocalizedMessage());
-//            }
-//            return result;
-//        }
-//
-//        @Override
-//        protected void onPostExecute(String result) {
-//            analyzeJsonString(result);
-//            try {
-//                eVideoView.pauseMedia();
-//                eVideoView.setMediaPath(SERVER_BASE_URL + showVideoInformation.qualities.get(0).file);
-//                eVideoView.prepareMedia(true);
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//
-//        private EVideoInformation analyzeJsonString(String result)
-//        {
-//            EVideoInformation newEVideoInformation = null;
-//            try {
-//                JSONObject videoInformation = new JSONObject(result).getJSONObject("video");
-//                newEVideoInformation = new Gson().fromJson(videoInformation.toString(), EVideoInformation.class);
-//                newEVideoInformation.type = EVideoInformation.EVIDEO_INFORMATION_SHOW_TYPE;
-//            } catch (JSONException e) {
-//                e.printStackTrace();
-//            }
-//            return newEVideoInformation;
-//        }
-//    }
+    @Override
+    public void onPostUnlikeOnVideoTaskComplete(WebServiceRespond webServiceRespond, String likes) {
+        if(webServiceRespond.ok)
+        {
+            showVideoInformation.liked = "false";
+            cpvh.contentPageVideoLike.setImageResource(R.drawable.like);
+            cpvh.contentPageVideoLikesNumber.setText(likes);
 
-//    private class GetIndexVideosTask extends AsyncTask<String, Void, String> {
-//
-//        @Override
-//        protected String doInBackground(String... paramsValue) {
-//            String result = "";
-//            try {
-//                InputStream inputStream = Utilities.getWebServiceInputStream(paramsValue[0], paramsValue[1], GET_ALL_VIDEOS);
-//                if (inputStream != null)
-//                    result = Utilities.convertInputStreamToString(inputStream);
-//                else
-//                    result = "FailedToConnect";
-//            } catch (Exception e) {
-//                Log.d("InputStream", e.getLocalizedMessage());
-//            }
-//            return result;
-//        }
-//
-//        @Override
-//        protected void onPostExecute(String result) {
-//            analyzeJsonString(result);
-//            populateListView();
-//        }
-//
-//        private void analyzeJsonString(String result)
-//        {
-//            try {
-//                JSONArray jsonArray = new JSONArray(result);
-//                for(int i = 0; i < jsonArray.length(); i++) {
-//                    JSONObject videoInformation = jsonArray.getJSONObject(i);
-//                    Gson gson = new Gson();
-//                    EVideoInformation newEVideoInformation = gson.fromJson(videoInformation.toString(), EVideoInformation.class);
-//                    newEVideoInformation.type = EVideoInformation.EVIDEO_INFORMATION_INDEX_TYPE;
-//                    indexVideosInformation.add(newEVideoInformation);
-//                }
-//            } catch (JSONException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//    }
+            for(EVideoInformation videoInformation : indexVideosInformation)
+                if(videoInformation.id == showVideoInformation.id)
+                {
+                    videoInformation.likes = String.valueOf(Integer.parseInt(videoInformation.likes) + 1);
+                    homePageListViewAdapter.notifyDataSetChanged();
+                }
+        }
+        else
+            toast(webServiceRespond.description);
+    }
 
-//    private class GetQueueVideosTask extends AsyncTask<String, Void, String> {
-//
-//        @Override
-//        protected String doInBackground(String... paramsValue) {
-//            String result = "";
-//            try {
-//                InputStream inputStream = Utilities.getWebServiceInputStream(paramsValue[0], paramsValue[1], GET_ALL_QUEUE_VIDEOS);
-//                if (inputStream != null)
-//                    result = Utilities.convertInputStreamToString(inputStream);
-//                else
-//                    result = "FailedToConnect";
-//            } catch (Exception e) {
-//                Log.d("InputStream", e.getLocalizedMessage());
-//            }
-//            return result;
-//        }
-//
-//        @Override
-//        protected void onPostExecute(String result) {
-//            analyzeJsonString(result);
-//            populateListView();
-//        }
-//
-//        private void analyzeJsonString(String result)
-//        {
-//            try {
-//                JSONArray jsonArray = new JSONArray(result);
-//                for(int i = 0; i < jsonArray.length(); i++) {
-//                    JSONObject videoInformation = jsonArray.getJSONObject(i);
-//                    Gson gson = new Gson();
-//                    EVideoInformation newEVideoInformation = gson.fromJson(videoInformation.toString(), EVideoInformation.class);
-//                    newEVideoInformation.type = EVideoInformation.EVIDEO_INFORMATION_QUEUE_TYPE;
-//                    queueVideosInformation.add(newEVideoInformation);
-//                }
-//            } catch (JSONException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//    }
+    public static class ActionBarViewHolder{
+        LinearLayout actionBar;
+        LinearLayout actionBarAuthenticationPanel;
+        LinearLayout actionBarUserPanel;
+        TextView actionBarTitle;
+        TextView actionBarLogin;
+        TextView actionBarSignUp;
+        ImageButton actionBarNavigationBar;
+        ImageButton actionBarQueue;
+    }
 
-//    private class GetVideoTask extends AsyncTask<String, Void, String> {
-//
-//        EVideoInformation newEVideoInformation;
-//
-//        @Override
-//        protected String doInBackground(String... paramsValue) {
-//            String result = "";
-//            try {
-//                InputStream inputStream = Utilities.getWebServiceInputStream(paramsValue[0], paramsValue[1], GET_VIDEO + paramsValue[2]);
-//                if (inputStream != null)
-//                    result = Utilities.convertInputStreamToString(inputStream);
-//                else
-//                    result = "FailedToConnect";
-//            } catch (Exception e) {
-//                Log.d("InputStream", e.getLocalizedMessage());
-//            }
-//            return result;
-//        }
-//
-//        // onPostExecute displays the results of the AsyncTask.
-//        @Override
-//        protected void onPostExecute(String result) {
-//            analyzeJsonString(result);
-//            try {
-//                eVideoView.setMediaPath(SERVER_BASE_URL + showVideoInformation.qualities.get(0).file);
-////                eVideoView.setMediaPath("http://video.erixe.com/videos/2/qualities/original.mp4");
-//                eVideoView.prepareMedia(true);
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//
-//        private void analyzeJsonString2(String result)
-//        {
-//
-//        }
-//
-//        private void analyzeJsonString(String result)
-//        {
-//            try {
-//                JSONObject jsonObject = new JSONObject(result);
-//                JSONObject videoInformation = jsonObject.getJSONObject("video");
-//                newEVideoInformation = new EVideoInformation();
-//
-//                analyzeGeneralInformation(videoInformation);
-//                analyzeUserInformation(videoInformation);
-//                analyzeCoverInformation(videoInformation);
-//                analyzeQualitiesInformation(videoInformation);
-//                analyzeThumbnailsInformation(videoInformation);
-//                analyzeSubtitlesInformation(videoInformation);
-//
-//                showVideoInformation = newEVideoInformation;
-//            } catch (JSONException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//
-//        private void analyzeGeneralInformation(JSONObject videoInformation){
-//            try {
-//                Gson gson = new Gson();
-//                newEVideoInformation = gson.fromJson(videoInformation.toString(), EVideoInformation.class);
-//
-//                newEVideoInformation.id = videoInformation.getString("id");
-////                newEVideoInformation.title = videoInformation.getString("title");
-////                newEVideoInformation.description = videoInformation.getString("description");
-////                newEVideoInformation.duration = videoInformation.getString("duration");
-////                newEVideoInformation.published = videoInformation.getString("published");
-////                newEVideoInformation.user_id = videoInformation.getString("user_id");
-////                newEVideoInformation.original_clip_id = videoInformation.getString("original_clip_id");
-////                newEVideoInformation.selected_cover_id = videoInformation.getString("selected_cover_id");
-////                newEVideoInformation.created_at = videoInformation.getString("created_at");
-////                newEVideoInformation.updated_at = videoInformation.getString("updated_at");
-//            } catch (JSONException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//
-//        private void analyzeUserInformation(JSONObject videoInformation){
-//            try {
-//                JSONObject videoUserInformation = videoInformation.getJSONObject("user");
-//                newEVideoInformation.user.id = videoUserInformation.getString("id");
-//                newEVideoInformation.user.name = videoUserInformation.getString("name");
-//                newEVideoInformation.user.email = videoUserInformation.getString("email");
-//                newEVideoInformation.user.confirmed = videoUserInformation.getString("confirmed");
-//                newEVideoInformation.user.created_at = videoUserInformation.getString("created_at");
-//                newEVideoInformation.user.updated_at = videoUserInformation.getString("updated_at");
-//            } catch (JSONException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//
-//        private void analyzeCoverInformation(JSONObject videoInformation){
-//            try {
-//                JSONObject videoCoverInformation = videoInformation.getJSONObject("cover");
-//                newEVideoInformation.cover.id = videoCoverInformation.getString("id");
-//                newEVideoInformation.cover.time = videoCoverInformation.getString("time");
-//                newEVideoInformation.cover.file = videoCoverInformation.getString("file");
-//                newEVideoInformation.cover.video_id = videoCoverInformation.getString("video_id");
-//            } catch (JSONException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//
-//        private void analyzeQualitiesInformation(JSONObject videoInformation){
-//            try {
-//                JSONArray videoQualitiesInformation = videoInformation.getJSONArray("qualities");
-//
-//                EVideoInformationQuality newQuality = new EVideoInformationQuality();
-//                for(int i = 0; i < videoQualitiesInformation.length(); i++)
-//                {
-//                    JSONObject currentVideoQuality = videoQualitiesInformation.getJSONObject(i);
-//                    newQuality.id = currentVideoQuality.getString("id");
-//                    newQuality.width = currentVideoQuality.getString("width");
-//                    newQuality.height = currentVideoQuality.getString("height");
-//                    newQuality.file = currentVideoQuality.getString("file");
-//                    newQuality.video_id = currentVideoQuality.getString("video_id");
-//
-//                    newEVideoInformation.qualities.add(newQuality);
-//                }
-//            } catch (JSONException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//
-//        private void analyzeThumbnailsInformation(JSONObject videoInformation){
-//            try {
-//                JSONArray videoThumbnailsInformation = videoInformation.getJSONArray("thumbnail");
-//
-//                EVideoInformationThumbnail newThumbnail = new EVideoInformationThumbnail();
-//                for (int i = 0; i < videoThumbnailsInformation.length(); i++) {
-//                    JSONObject currentVideoQuality = videoThumbnailsInformation.getJSONObject(i);
-//                    newThumbnail.id = currentVideoQuality.getString("id");
-//                    newThumbnail.time = currentVideoQuality.getString("time");
-//                    newThumbnail.file = currentVideoQuality.getString("file");
-//                    newThumbnail.video_id = currentVideoQuality.getString("video_id");
-//
-//                    newEVideoInformation.thumbnails.add(newThumbnail);
-//                }
-//            } catch (JSONException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//
-//        private void analyzeSubtitlesInformation(JSONObject videoInformation) {
-//            try {
-//                JSONArray videoSubtitlesInformation = videoInformation.getJSONArray("subtitles");
-//
-//                EVideoInformationSubtitle newSubtitle = new EVideoInformationSubtitle();
-//                for (int i = 0; i < videoSubtitlesInformation.length(); i++) {
-//                    JSONObject currentVideoQuality = videoSubtitlesInformation.getJSONObject(i);
-//                    newSubtitle.id = currentVideoQuality.getString("id");
-//                    newSubtitle.language_id = currentVideoQuality.getString("language_id");
-//                    newSubtitle.file = currentVideoQuality.getString("file");
-//                    newSubtitle.video_id = currentVideoQuality.getString("video_id");
-//
-//                    newEVideoInformation.subtitles.add(newSubtitle);
-//                }
-//            } catch (JSONException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//    }
+    public static class HomePageViewHolder{
+        LinearLayout homePage;
+        EditText homePageSearchEditText;
+        ListView homePageVideoList;
+    }
 
+    public static class ContentPageViewHolder{
+        LinearLayout contentPage;
+        LinearLayout contentPageContent;
+        RelativeLayout contentPageLoadingPanel;
+        EVideoView contentPageEVideoView;
+        TextView contentPageVideoDescription;
+        TextView contentPageVideoTitle;
+        TextView contentPageVideoLikesNumber;
+        TextView contentPageVideoCommentsNumber;
+        TextView contentPageVideoViews;
+        ListView contentPageVideoList;
+        ImageButton contentPageVideoLike;
+        ImageButton contentPageVideoAddToQueue;
+        EditText contentPageCommentText;
+        Button contentPageCommentSend;
+    }
+
+    public void setViewHolders()
+    {
+        abvh.actionBar = (LinearLayout) findViewById(R.id.actionBar);
+        abvh.actionBarAuthenticationPanel = (LinearLayout) findViewById(R.id.actionBarAuthenticationPanel);
+        abvh.actionBarUserPanel = (LinearLayout) findViewById(R.id.actionBarUserPanel);
+        abvh.actionBarTitle = (TextView) findViewById(R.id.actionBarTitle);
+        abvh.actionBarLogin = (TextView) findViewById(R.id.actionBarLogin);
+        abvh.actionBarSignUp = (TextView) findViewById(R.id.actionBarSignUp);
+        abvh.actionBarNavigationBar = (ImageButton) findViewById(R.id.actionBarNavigationBar);
+        abvh.actionBarQueue = (ImageButton) findViewById(R.id.actionBarQueue);
+        setActionBarListeners();
+
+        hpvh.homePage = (LinearLayout) findViewById(R.id.homePage);
+        hpvh.homePageSearchEditText = (EditText) findViewById(R.id.homePageSearchEditText);
+        hpvh.homePageVideoList = (ListView) findViewById(R.id.homePageVideoList);
+        setHomePageListeners();
+
+        cpvh.contentPage = (LinearLayout) findViewById(R.id.contentPage);
+        cpvh.contentPageContent = (LinearLayout) findViewById(R.id.contentPageContent);
+        cpvh.contentPageLoadingPanel = (RelativeLayout) findViewById(R.id.contentPageLoadingPanel);
+        cpvh.contentPageEVideoView = (EVideoView) findViewById(R.id.contentPageEVideoView);
+        cpvh.contentPageVideoList = (ListView) findViewById(R.id.contentPageVideoList);
+        cpvh.contentPageVideoTitle = (TextView) findViewById(R.id.contentPageVideoTitle);
+        cpvh.contentPageVideoLikesNumber = (TextView) findViewById(R.id.contentPageVideoLikesNumber);
+        cpvh.contentPageVideoCommentsNumber = (TextView) findViewById(R.id.contentPageVideoCommentsNumber);
+        cpvh.contentPageVideoViews = (TextView) findViewById(R.id.contentPageVideoViews);
+        cpvh.contentPageVideoDescription = (TextView) findViewById(R.id.contentPageVideoDescription);
+        cpvh.contentPageVideoLike = (ImageButton) findViewById(R.id.contentPageVideoLike);
+        cpvh.contentPageVideoAddToQueue = (ImageButton) findViewById(R.id.contentPageVideoAddToQueue);
+        cpvh.contentPageCommentText = (EditText) findViewById(R.id.contentPageCommentText);
+        cpvh.contentPageCommentSend = (Button) findViewById(R.id.contentPageCommentSend);
+        setContentPageListeners();
+
+        Display display = getWindowManager().getDefaultDisplay();
+        Point size = new Point();
+        display.getSize(size);
+        screenHeight = size.y;
+        screenWidth = size.x;
+
+        if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            marginTopForLayout = screenWidth;
+            cpvh.contentPageEVideoView.changeToFullScreen();
+        } else if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT){
+            marginTopForLayout = screenHeight;
+        }
+    }
+
+    public void setActionBarListeners()
+    {
+        abvh.actionBarLogin.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(getApplicationContext(), LoginActivity.class);
+                startActivity(intent);
+            }
+        });
+
+        abvh.actionBarSignUp.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(getApplicationContext(), SignUpActivity.class);
+                startActivity(intent);
+            }
+        });
+
+        abvh.actionBarNavigationBar.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                prefs.edit().remove("username").apply();
+                prefs.edit().remove("password").apply();
+                Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                startActivity(intent);
+            }
+        });
+
+        abvh.actionBarQueue.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                new GetQueueVideosTask(MainActivity.this, null).execute(username, password);
+            }
+        });
+
+        abvh.actionBarTitle.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(abvh.actionBarTitle.getText().toString().equals("Home"))
+                    new GetIndexVideosTask(MainActivity.this, null).execute(username, password);
+            }
+        });
+    }
+
+    public void setHomePageListeners()
+    {
+        hpvh.homePageSearchEditText.setImeActionLabel("Search", KeyEvent.KEYCODE_ENTER);
+        hpvh.homePageSearchEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
+                if (i == EditorInfo.IME_NULL && keyEvent.getAction() == KeyEvent.ACTION_DOWN) {
+                    Map<String, String> paramsMap = new HashMap<String, String>();
+                    paramsMap.put("q", hpvh.homePageSearchEditText.getText().toString());
+                    new GetSearchVideosTask(MainActivity.this, paramsMap).execute(username, password);
+                    toast("searching");
+                    Utilities.hideKeyboard(getApplicationContext());
+                }
+                return true;
+            }
+        });
+    }
+
+    public void setContentPageListeners() {
+        cpvh.contentPageVideoLike.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(!showVideoInformation.liked.equals("true"))
+                    new PostLikeOnVideoTask(MainActivity.this, null).execute(username, password, showVideoInformation.id);
+                else
+                    new PostUnlikeOnVideoTask(MainActivity.this, null).execute(username, password, showVideoInformation.id);
+            }
+        });
+
+        cpvh.contentPageVideoAddToQueue.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(!showVideoInformation.queued.equals("true"))
+                    new PostAddVideoToQueueTask(MainActivity.this, null).execute(username, password, showVideoInformation.id);
+                else
+                    new PostRemoveVideoFromQueueTask(MainActivity.this, null).execute(username, password, showVideoInformation.id);
+            }
+        });
+
+        cpvh.contentPageCommentSend.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Map<String, String> paramsMap = new HashMap<String, String>();
+                if(cpvh.contentPageCommentText.getText().toString().length() != 0 && showVideoInformation != null) {
+                    paramsMap.put("body", cpvh.contentPageCommentText.getText().toString());
+                    cpvh.contentPageCommentText.setText("");
+                    Utilities.hideKeyboard(getApplicationContext());
+                    new PostCommentOnVideoTask(MainActivity.this, paramsMap).execute(username, password, showVideoInformation.id);
+                }
+            }
+        });
+    }
+
+    public void fillContentPage(EVideoInformation eVideoInformation)
+    {
+        if(eVideoInformation != null) {
+            cpvh.contentPageLoadingPanel.setVisibility(View.GONE);
+            cpvh.contentPageContent.setVisibility(View.VISIBLE);
+
+            if (eVideoInformation.liked.equals("true"))
+                cpvh.contentPageVideoLike.setImageResource(R.drawable.liked);
+            else
+                cpvh.contentPageVideoLike.setImageResource(R.drawable.like);
+
+            if (eVideoInformation.queued.equals("true"))
+                cpvh.contentPageVideoAddToQueue.setImageResource(R.drawable.remove_from_queue);
+            else
+                cpvh.contentPageVideoAddToQueue.setImageResource(R.drawable.add_to_queue);
+
+            cpvh.contentPageVideoLikesNumber.setText(eVideoInformation.likes);
+            cpvh.contentPageVideoViews.setText(eVideoInformation.views + " views");
+            cpvh.contentPageVideoCommentsNumber.setText(eVideoInformation.comments.size() + " comments");
+            cpvh.contentPageVideoTitle.setText(eVideoInformation.title);
+            if(eVideoInformation.description.equals(""))
+                cpvh.contentPageVideoDescription.setVisibility(View.GONE);
+            else
+            {
+                cpvh.contentPageVideoDescription.setVisibility(View.VISIBLE);
+                cpvh.contentPageVideoDescription.setText(eVideoInformation.description);
+            }
+
+            commentListItemAdapter = new CommentListItemAdapter(getApplicationContext(), eVideoInformation.comments);
+            cpvh.contentPageVideoList.setAdapter(commentListItemAdapter);
+        }
+        else
+        {
+            cpvh.contentPageLoadingPanel.setVisibility(View.VISIBLE);
+            cpvh.contentPageEVideoView.openLoadingPanelBlack();
+            cpvh.contentPageContent.setVisibility(View.GONE);
+//            cpvh.contentPageVideoLike.setImageResource(R.drawable.like);
+//            cpvh.contentPageVideoAddToQueue.setImageResource(R.drawable.add_to_queue);
+//            cpvh.contentPageVideoLikesNumber.setText("");
+//            cpvh.contentPageVideoTitle.setText("");
+//            cpvh.contentPageVideoDescription.setText("");
+//
+//            cpvh.contentPageVideoList.setAdapter(null);
+        }
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        outState.putInt("layoutState", layoutState);
+        super.onSaveInstanceState(outState);
+    }
 }
