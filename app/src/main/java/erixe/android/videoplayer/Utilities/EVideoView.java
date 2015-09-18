@@ -1,7 +1,11 @@
 package erixe.android.videoplayer.Utilities;
 
 import android.content.Context;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Parcel;
@@ -13,16 +17,22 @@ import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
+import android.widget.AdapterView;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import erixe.android.videoplayer.Adapters.VideoQualityListItemAdapter;
+import erixe.android.videoplayer.EVideoInformationModels.EVideoInformationQuality;
+import erixe.android.videoplayer.EWebServices.EWebServiceStrings;
 import erixe.android.videoplayer.R;
 
 /**
@@ -43,8 +53,8 @@ public class EVideoView extends LinearLayout implements EMediaPlayer.OnEMediaPla
     public EMediaPlayer eMediaPlayer = new EMediaPlayer(this);
     private Handler durationHandler = new Handler();
 
-    public boolean layoutHeightReadyState, layoutBeingAnimated, playMediaAfterPrepared;
-    private double timeElapsed = 0;
+    public boolean layoutHeightReadyState, layoutBeingAnimated, playMediaAfterPrepared, landscapeMode;
+    private double timeElapsed = 0, timeBuffered = 0;
 
     public EVideoView(Context context) {
         super(context);
@@ -79,12 +89,17 @@ public class EVideoView extends LinearLayout implements EMediaPlayer.OnEMediaPla
         vh = new EVideoViewHolder();
         vh.eVideoViewLayout = this;
         vh.eVideoViewMediaLayout = (RelativeLayout) this.findViewById(R.id.EVideoViewMediaLayout);
+        vh.eVideoViewLoadingPanel = (RelativeLayout) this.findViewById(R.id.EVideoViewLoadingPanel);
+        vh.eVideoViewLoadingPanelBlack = (RelativeLayout) this.findViewById(R.id.EVideoViewLoadingPanelBlack);
+        vh.eVideoViewQualitiesPanel = (RelativeLayout) this.findViewById(R.id.EVideoViewQualitiesPanel);
         vh.eVideoViewTextureView = (TextureView) this.findViewById(R.id.EVideoViewTextureView);
         vh.eVideoViewBottomLayout = (LinearLayout) this.findViewById(R.id.EVideoViewBottomLayout);
         vh.eVideoViewPlayPauseButton = (ImageButton) this.findViewById(R.id.EVideoViewPlayPauseButton);
+        vh.eVideoViewQualities = (ImageButton) this.findViewById(R.id.EVideoViewQualities);
         vh.eVideoViewSeekBar = (SeekBar) this.findViewById(R.id.EVideoViewSeekBar);
         vh.eVideoViewDurationTextView = (TextView) this.findViewById(R.id.EVideoViewDurationTextView);
         vh.eVideoViewContentLayout = (LinearLayout) this.findViewById(R.id.EVideoViewContentLayout);
+        vh.eVideoViewQualitiesListView = (ListView) this.findViewById(R.id.EVideoViewQualitiesListView);
 
         //call the object that the height values are set
         ViewTreeObserver vto = vh.eVideoViewMediaLayout.getViewTreeObserver();
@@ -102,7 +117,39 @@ public class EVideoView extends LinearLayout implements EMediaPlayer.OnEMediaPla
             }
         });
 
+        vh.eVideoViewLoadingPanelBlack.setVisibility(VISIBLE);
         setEVideoViewPlayPauseButtonOnClickListener();
+        setEVideoViewEVideoViewQualitiesOnClickListener();
+        setEVideoViewSeekBarOnSeekListener();
+        setEMediaPlayerListeners();
+    }
+
+    public void setEMediaPlayerListeners()
+    {
+        eMediaPlayer.setOnInfoListener(new MediaPlayer.OnInfoListener() {
+            @Override
+            public boolean onInfo(MediaPlayer mp, int what, int extra) {
+                switch (what) {
+                    case MediaPlayer.MEDIA_INFO_BUFFERING_START:
+                        vh.eVideoViewLoadingPanel.setVisibility(View.VISIBLE);
+                        break;
+                    case MediaPlayer.MEDIA_INFO_BUFFERING_END:
+                        vh.eVideoViewLoadingPanel.setVisibility(View.GONE);
+                        break;
+                }
+
+                return false;
+            }
+        });
+
+        eMediaPlayer.setOnBufferingUpdateListener(new MediaPlayer.OnBufferingUpdateListener() {
+            @Override
+            public void onBufferingUpdate(MediaPlayer mediaPlayer, int i) {
+                int secondaryProgress = (i * eMediaPlayer.getDuration()) / 100;
+                if (secondaryProgress < vh.eVideoViewSeekBar.getMax())
+                    vh.eVideoViewSeekBar.setSecondaryProgress(secondaryProgress);
+            }
+        });
     }
 
     public void setVideoPlayerSurface() {
@@ -170,7 +217,7 @@ public class EVideoView extends LinearLayout implements EMediaPlayer.OnEMediaPla
 
                     @Override
                     public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
-                        return false;
+                        return true;
                     }
 
                     @Override
@@ -180,6 +227,44 @@ public class EVideoView extends LinearLayout implements EMediaPlayer.OnEMediaPla
                 });
             }
         }
+    }
+
+    public void setVideoQualities(final List<EVideoInformationQuality> eVideoInformationQualities)
+    {
+        VideoQualityListItemAdapter videoQualityListItemAdapter = new VideoQualityListItemAdapter(context, eVideoInformationQualities);
+        vh.eVideoViewQualitiesListView.setAdapter(videoQualityListItemAdapter);
+
+        vh.eVideoViewQualitiesListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                durationHandler.removeCallbacks(updateSeekBarAndDuration);
+                eMediaPlayer.changeQualityTo(EWebServiceStrings.SERVER_BASE_URL + eVideoInformationQualities.get(i).file, eMediaPlayer.getCurrentPosition());
+                vh.eVideoViewQualitiesPanel.setVisibility(GONE);
+            }
+        });
+
+        vh.eVideoViewQualitiesPanel.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                vh.eVideoViewQualitiesPanel.setVisibility(GONE);
+            }
+        });
+    }
+
+    public void resetMedia()
+    {
+        eMediaPlayer.reset();
+        eMediaPlayer.state = 0;
+        durationHandler.removeCallbacks(updateSeekBarAndDuration);
+        vh.eVideoViewTextureView.invalidate();
+        vh.eVideoViewSeekBar.setProgress(0);
+        vh.eVideoViewSeekBar.setSecondaryProgress(0);
+        vh.eVideoViewDurationTextView.setText("00:00");
+    }
+
+    public void requestInvalidate()
+    {
+        vh.eVideoViewTextureView.invalidate();
     }
 
     public void setEVideoViewPlayPauseButtonOnClickListener()
@@ -197,11 +282,49 @@ public class EVideoView extends LinearLayout implements EMediaPlayer.OnEMediaPla
         });
     }
 
+    public void setEVideoViewEVideoViewQualitiesOnClickListener()
+    {
+        vh.eVideoViewQualities.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(vh.eVideoViewQualitiesPanel.getVisibility() == GONE)
+                    vh.eVideoViewQualitiesPanel.setVisibility(VISIBLE);
+                else
+                    vh.eVideoViewQualitiesPanel.setVisibility(GONE);
+            }
+        });
+    }
+
+    public void setEVideoViewSeekBarOnSeekListener()
+    {
+        vh.eVideoViewSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+                if(b) {
+                    eMediaPlayer.seekTo(i);
+                    setVideoViewDurationTextViewText(i);
+                    durationHandler.postDelayed(updateSeekBarAndDuration, 100);
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+                durationHandler.removeCallbacks(updateSeekBarAndDuration);
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+        });
+    }
+
     private void setVideoViewDurationTextViewText(double timeElapsed)
     {
+        timeElapsed = timeElapsed / 1000;
         String minStr, secondStr;
-        int min = (int) (timeElapsed / 60000);
-        int second = (int) ((timeElapsed - min * 60000) / 1000);
+        int hour = (int) (timeElapsed / 3600);
+        int min = (int) ((timeElapsed - hour * 3600) / 60);
+        int second = (int) (timeElapsed - hour * 3600 - min * 60);
 
         if (min < 10)
             minStr = "0" + min;
@@ -213,16 +336,27 @@ public class EVideoView extends LinearLayout implements EMediaPlayer.OnEMediaPla
         else
             secondStr = String.valueOf(second);
 
-        String finalTime = String.format("%d min, %d sec",
-                TimeUnit.MILLISECONDS.toMinutes((long) timeElapsed),
-                TimeUnit.MILLISECONDS.toSeconds((long) timeElapsed) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes((long) timeElapsed)));
+        String finalTime = "";
+        if(hour == 0)
+            finalTime = minStr + ":" + secondStr;
+        else
+            finalTime = hour + ":" + minStr + ":" + secondStr;
 
-        finalTime = minStr + ":" + secondStr;
         vh.eVideoViewDurationTextView.setText(finalTime);
     }
 
     public void setMediaPath(String path) throws IOException {
         eMediaPlayer.setMediaPath(path);
+    }
+
+    public void openLoadingPanelBlack()
+    {
+        vh.eVideoViewLoadingPanelBlack.setVisibility(VISIBLE);
+    }
+
+    public void setMediaSubtitle(String path)
+    {
+
     }
 
     public void prepareMedia(boolean playMediaAfterPrepared)
@@ -235,6 +369,8 @@ public class EVideoView extends LinearLayout implements EMediaPlayer.OnEMediaPla
     {
         if(eMediaPlayer.state >= EMediaPlayer.MEDIA_PREPARED) {
             eMediaPlayer.playMedia();
+            vh.eVideoViewPlayPauseButton.setImageResource(R.drawable.pause);
+            vh.eVideoViewLoadingPanel.setVisibility(View.GONE);
             timeElapsed = eMediaPlayer.getCurrentPosition();
             vh.eVideoViewSeekBar.setProgress((int) timeElapsed);
             vh.eVideoViewSeekBar.setMax(eMediaPlayer.getDuration());
@@ -250,6 +386,28 @@ public class EVideoView extends LinearLayout implements EMediaPlayer.OnEMediaPla
     public void pauseMedia()
     {
         eMediaPlayer.pauseMedia();
+        vh.eVideoViewPlayPauseButton.setImageResource(R.drawable.play);
+        vh.eVideoViewLoadingPanel.setVisibility(View.GONE);
+    }
+
+    public void changeToFullScreen()
+    {
+        landscapeMode = true;
+        ViewGroup.LayoutParams lp = vh.eVideoViewTextureView.getLayoutParams();
+        ViewGroup.LayoutParams lp2 = vh.eVideoViewMediaLayout.getLayoutParams();
+
+        lp.height = ViewGroup.LayoutParams.MATCH_PARENT;
+        lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
+        lp2.height = ViewGroup.LayoutParams.MATCH_PARENT;
+        lp2.width = ViewGroup.LayoutParams.MATCH_PARENT;
+
+        vh.eVideoViewTextureView.setLayoutParams(lp);
+        vh.eVideoViewMediaLayout.setLayoutParams(lp2);
+
+        vh.eVideoViewTextureView.requestLayout();
+        vh.eVideoViewTextureView.invalidate();
+        vh.eVideoViewMediaLayout.requestLayout();
+        vh.eVideoViewMediaLayout.invalidate();
     }
 
     private void onConfigurationChanged(){
@@ -299,20 +457,37 @@ public class EVideoView extends LinearLayout implements EMediaPlayer.OnEMediaPla
 
     @Override
     public void onEMediaPlayerPrepared() {
-        if(playMediaAfterPrepared)
+        if(playMediaAfterPrepared) {
             playMedia();
+        }
+        vh.eVideoViewLoadingPanelBlack.setVisibility(GONE);
+    }
+
+    @Override
+    public void onQualityChanged() {
+        durationHandler.postDelayed(updateSeekBarAndDuration, 0);
+    }
+
+    @Override
+    public void onTimedTextReady(String newSubtitleText) {
+
     }
 
     private static class EVideoViewHolder implements Serializable
     {
         LinearLayout eVideoViewLayout;
         RelativeLayout eVideoViewMediaLayout;
+        RelativeLayout eVideoViewLoadingPanel;
+        RelativeLayout eVideoViewLoadingPanelBlack;
+        RelativeLayout eVideoViewQualitiesPanel;
         TextureView eVideoViewTextureView;
         LinearLayout eVideoViewBottomLayout;
         ImageButton eVideoViewPlayPauseButton;
+        ImageButton eVideoViewQualities;
         SeekBar eVideoViewSeekBar;
         TextView eVideoViewDurationTextView;
         LinearLayout eVideoViewContentLayout;
+        ListView eVideoViewQualitiesListView;
     }
 
     @Override
