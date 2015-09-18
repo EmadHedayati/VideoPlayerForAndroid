@@ -13,12 +13,14 @@ public class EVideoInformation {
     public static final int EVIDEO_INFORMATION_QUEUE_TYPE = 3;
 
     public int type;
-    public String id, title, description, duration, published, user_id, original_clip_id, selected_cover_id, created_at, updated_at;
+    public String id, title, description, duration, published, user_id, original_clip_id,
+            selected_cover_id, created_at, updated_at, liked = "false", queued = "false", likes = "0", views = "0";
     public EVideoInformationUser user = new EVideoInformationUser();
     public EVideoInformationCover cover = new EVideoInformationCover();
     public List<EVideoInformationQuality> qualities = new ArrayList<>();
     public List<EVideoInformationThumbnail> thumbnails = new ArrayList<>();
     public List<EVideoInformationSubtitle> subtitles = new ArrayList<>();
+    public List<EVideoInformationComment> comments = new ArrayList<>();
 
     public EVideoInformation()
     {
